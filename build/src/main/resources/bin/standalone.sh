@@ -41,6 +41,7 @@ MAX_FD="maximum"
 cygwin=false;
 darwin=false;
 linux=false;
+solaris=false;
 case "`uname`" in
     CYGWIN*)
         cygwin=true
@@ -52,6 +53,9 @@ case "`uname`" in
 
     Linux)
         linux=true
+        ;;
+    SunOS*)
+        solaris=true
         ;;
 esac
 
@@ -174,6 +178,28 @@ if $linux; then
               JBOSS_CONFIG_DIR=`readlink -m ${p#*=}`
               ;;
        esac
+    done
+fi
+
+if $solaris; then
+    # consolidate the host-controller and command line opts
+    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $@"
+    # process the host-controller options
+    for var in $HOST_CONTROLLER_OPTS
+    do
+       # Remove quotes
+       p=`echo $var | tr -d '"'`
+      case $p in
+        -Djboss.server.base.dir=*)
+             JBOSS_BASE_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -Djboss.server.log.dir=*)
+             JBOSS_LOG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -Djboss.server.config.dir=*)
+             JBOSS_CONFIG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+      esac
     done
 fi
 

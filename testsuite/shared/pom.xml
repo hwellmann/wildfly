@@ -7,14 +7,14 @@
     <parent>
         <groupId>org.jboss.as</groupId>
         <artifactId>jboss-as-parent</artifactId>
-        <version>7.2.0.Final-redhat-4</version>
+        <version>7.2.0.Final-redhat-8</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-testsuite-shared</artifactId>
     <packaging>jar</packaging>
-    <version>7.2.0.Final-redhat-4</version>
+    <version>7.2.0.Final-redhat-8</version>
 
     <name>JBoss Application Server Test Suite: Shared</name>
     
@@ -23,7 +23,6 @@
         <!-- Arquillian dependency versions -->
         <version.arquillian_core>${version.org.jboss.arquillian.core}</version.arquillian_core>
         <version.arquillian_as7>${project.parent.version}</version.arquillian_as7>
-        <version.xml.plugin>1.0</version.xml.plugin>
     </properties>
     <build>
         <plugins>

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2013, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -53,6 +53,9 @@ import org.junit.Assert;
  */
 public class DomainTestSupport {
 
+
+    private static final Configuration DEFAULT_CONFIG;
+
     private static final Logger log = Logger.getLogger("org.jboss.as.test.integration.domain");
 
     public static final String masterAddress = System.getProperty("jboss.test.host.master.address", "127.0.0.1");
@@ -63,6 +66,27 @@ public class DomainTestSupport {
     public static final String slaveJvmHome = System.getProperty("jboss.test.host.slave.jvmhome");
     public static final String masterControllerJvmHome = System.getProperty("jboss.test.host.master.controller.jvmhome");
     public static final String slaveControllerJvmHome = System.getProperty("jboss.test.host.slave.controller.jvmhome");
+
+    static {
+        DEFAULT_CONFIG = DomainTestSupport.Configuration.create("domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml", JBossAsManagedConfigurationParameters.STANDARD, JBossAsManagedConfigurationParameters.STANDARD);
+    }
+
+    /**
+     * Create and start a default configuration for the domain tests.
+     *
+     * @param testName the test name
+     * @return a started domain test support
+     */
+    public static DomainTestSupport createAndStartDefaultSupport(final String testName) {
+        try {
+            final DomainTestSupport testSupport = DomainTestSupport.create(testName, DEFAULT_CONFIG);
+            // Start!
+            testSupport.start();
+            return testSupport;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static JBossAsManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath, String testName, JBossAsManagedConfigurationParameters params) throws URISyntaxException {
         final String hostName = "master";
@@ -77,10 +101,8 @@ public class DomainTestSupport {
         URL url = tccl.getResource(domainConfigPath);
         assert url != null : "cannot find domainConfigPath";
         masterConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
-        System.out.println(masterConfig.getDomainConfigFile());
         url = tccl.getResource(hostConfigPath);
         assert url != null : "cannot find hostConfigPath";
-        System.out.println(masterConfig.getHostConfigFile());
         masterConfig.setHostConfigFile(new File(url.toURI()).getAbsolutePath());
         File masterDir = new File(domains, hostName);
         // TODO this should not be necessary
@@ -106,12 +128,10 @@ public class DomainTestSupport {
                 " -Djboss.test.host.slave.address=" + slaveAddress);
         URL url = tccl.getResource(hostConfigPath);
         slaveConfig.setHostConfigFile(new File(url.toURI()).getAbsolutePath());
-        System.out.println(slaveConfig.getHostConfigFile());
         File slaveDir = new File(domains, hostName);
         // TODO this should not be necessary
         new File(slaveDir, "configuration").mkdirs();
         slaveConfig.setDomainDirectory(slaveDir.getAbsolutePath());
-        System.out.println(slaveConfig.getDomainDirectory());
         if (slaveJvmHome != null) slaveConfig.setJavaHome(slaveJvmHome);
         if (slaveControllerJvmHome != null) slaveConfig.setControllerJavaHome(slaveControllerJvmHome);
         return slaveConfig;
@@ -373,12 +393,17 @@ public class DomainTestSupport {
         }
 
         public JBossAsManagedConfigurationParameters getMasterConfigurationParameters() {
-            return slaveParams;
+            return masterParams;
         }
 
 
         public JBossAsManagedConfigurationParameters getSlaveConfigurationParameters() {
             return slaveParams;
+        }
+
+        public static Configuration create(final String domainConfig, final String masterConfig, final String slaveConfig) {
+            return new Configuration(domainConfig, masterConfig, slaveConfig,
+                    JBossAsManagedConfigurationParameters.STANDARD, JBossAsManagedConfigurationParameters.STANDARD);
         }
 
         public static Configuration create(final String domainConfig, final String masterConfig, final String slaveConfig, JBossAsManagedConfigurationParameters masterParams, JBossAsManagedConfigurationParameters slaveParams) {

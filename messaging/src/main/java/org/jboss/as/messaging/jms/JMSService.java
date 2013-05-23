@@ -43,7 +43,11 @@ import org.jboss.msc.value.InjectedValue;
 
 import static org.jboss.as.messaging.MessagingLogger.MESSAGING_LOGGER;
 import static org.jboss.as.messaging.MessagingMessages.MESSAGES;
+import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
+import static org.jboss.msc.service.ServiceController.Mode.PASSIVE;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
+import static org.jboss.msc.service.ServiceController.State.REMOVED;
+import static org.jboss.msc.service.ServiceController.State.STOPPING;
 
 /**
  * The {@code JMSServerManager} service.
@@ -76,7 +80,7 @@ public class JMSService implements Service<JMSServerManager> {
                     .setInitialMode(Mode.ACTIVE);
 
             hornetQServer.getValue().registerActivateCallback(new ActivateCallback() {
-                public ServiceController<Void> hornetqActivationController;
+                private volatile ServiceController<Void> hornetqActivationController;
 
                 public void preActivate() {
                 }
@@ -85,13 +89,23 @@ public class JMSService implements Service<JMSServerManager> {
                     // FIXME - this check is a work-around for AS7-3658
                     hornetQServer.getValue().getRemotingService().allowInvmSecurityOverride(new HornetQPrincipal(HornetQDefaultCredentials.getUsername(), HornetQDefaultCredentials.getPassword()));
                     // HornetQ only provides a callback to be notified when HornetQ core server is activated.
-                    // but the JMS service start must not be completed until the JMSServerManager wrappee is indeed started (and has deployed the JMS resources, etc.)
-                    hornetqActivationController = hornetqActivationService.install();
+                    // but the JMS service start must not be completed until the JMSServerManager wrappee is indeed started (and has deployed the JMS resources, etc.).
+                    // It is possible that the activation service has already been installed but becomes passive when a backup server has failed over (-> ACTIVE) and failed back (-> PASSIVE)
+                    if (hornetqActivationController == null) {
+                        hornetqActivationController = hornetqActivationService.install();
+                    } else {
+                        hornetqActivationController.setMode(ACTIVE);
+                    }
                 }
 
                 public void deActivate() {
+                    // passivate the activation service only if the HornetQ server is deactivated when it fails back
+                    // and *not* during AS7 service container shutdown or reload (AS7-6840 / AS7-6881)
                     if (hornetqActivationController != null) {
-                        hornetqActivationController.setMode(REMOVE);
+                        if (hornetqActivationController.getState() != STOPPING &&
+                                hornetqActivationController.getState() != REMOVED) {
+                            hornetqActivationController.compareAndSetMode(ACTIVE, PASSIVE);
+                        }
                     }
                 }
             });

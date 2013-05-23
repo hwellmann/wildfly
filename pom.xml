@@ -26,12 +26,12 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>10-redhat-1</version>
+      <version>10-redhat-2</version>
     </parent>
 
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-parent</artifactId>
-    <version>7.2.0.Final-redhat-4</version>
+    <version>7.2.0.Final-redhat-8</version>
 
     <name>JBoss Application Server: Parent Aggregator</name>
     <description>JBoss Application Server: Parent Aggregator</description>
@@ -3926,6 +3926,15 @@
                 <version>${version.org.jboss.jbossts.jbossjts}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman-submit</artifactId>
+                    </exclusion>
+
+                    <exclusion>
                         <groupId>commons-httpclient</groupId>
                         <artifactId>commons-httpclient</artifactId>
                     </exclusion>
@@ -4073,6 +4082,10 @@
                         <groupId>org.hornetq</groupId>
                         <artifactId>hornetq-core</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.jdeparser</groupId>
+                        <artifactId>jdeparser</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -4081,6 +4094,15 @@
                 <artifactId>jbossjts-integration</artifactId>
                 <version>${version.org.jboss.jbossts.jbossjts-integration}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman-submit</artifactId>
+                    </exclusion>
+
                     <exclusion>
                         <groupId>commons-httpclient</groupId>
                         <artifactId>commons-httpclient</artifactId>
@@ -4226,6 +4248,15 @@
                 <version>${version.org.jboss.jbossts.jbossxts}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman-submit</artifactId>
+                    </exclusion>
+
+                    <exclusion>
                         <groupId>commons-httpclient</groupId>
                         <artifactId>commons-httpclient</artifactId>
                     </exclusion>
@@ -4270,6 +4301,10 @@
                         <artifactId>arjunacore</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.jboss.jdeparser</groupId>
+                        <artifactId>jdeparser</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.jboss.logging</groupId>
                         <artifactId>jboss-logging-processor</artifactId>
                     </exclusion>
@@ -4311,6 +4346,15 @@
                 <version>${version.org.jboss.jbossts.jbossxts}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman-submit</artifactId>
+                    </exclusion>
+
+                    <exclusion>
                         <groupId>commons-httpclient</groupId>
                         <artifactId>commons-httpclient</artifactId>
                     </exclusion>
@@ -4349,6 +4393,10 @@
                     <exclusion>
                         <groupId>org.jboss.jbossts.arjunacore</groupId>
                         <artifactId>arjunacore</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.jdeparser</groupId>
+                        <artifactId>jdeparser</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.jboss.logging</groupId>
@@ -4394,6 +4442,15 @@
                 <artifactId>jbosstxbridge</artifactId>
                 <version>${version.org.jboss.jbossts.jbossxts}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.byteman</groupId>
+                        <artifactId>byteman-submit</artifactId>
+                    </exclusion>
+
                     <exclusion>
                         <groupId>commons-httpclient</groupId>
                         <artifactId>commons-httpclient</artifactId>
@@ -4525,6 +4582,10 @@
                     <exclusion>
                         <groupId>org.hornetq</groupId>
                         <artifactId>hornetq-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.jbossts.jta</groupId>
+                        <artifactId>jta</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

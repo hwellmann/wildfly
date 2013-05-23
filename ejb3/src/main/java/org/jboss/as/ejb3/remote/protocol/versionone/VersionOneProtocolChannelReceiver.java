@@ -22,6 +22,16 @@
 
 package org.jboss.as.ejb3.remote.protocol.versionone;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+
 import org.jboss.as.clustering.registry.Registry;
 import org.jboss.as.clustering.registry.RegistryCollector;
 import org.jboss.as.ejb3.EjbLogger;
@@ -32,6 +42,7 @@ import org.jboss.as.ejb3.deployment.DeploymentRepositoryListener;
 import org.jboss.as.ejb3.deployment.ModuleDeployment;
 import org.jboss.as.ejb3.remote.EJBRemoteTransactionsRepository;
 import org.jboss.as.ejb3.remote.RemoteAsyncInvocationCancelStatusService;
+import org.jboss.as.ejb3.remote.protocol.MessageHandler;
 import org.jboss.as.network.ClientMapping;
 import org.jboss.marshalling.MarshallerFactory;
 import org.jboss.remoting3.Channel;
@@ -39,16 +50,6 @@ import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.MessageInputStream;
 import org.jboss.remoting3.MessageOutputStream;
 import org.xnio.IoUtils;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 /**
  * @author Jaikiran Pai
@@ -65,14 +66,15 @@ public class VersionOneProtocolChannelReceiver implements Channel.Receiver, Depl
     private static final byte HEADER_TX_FORGET_REQUEST = 0x12;
     private static final byte HEADER_TX_BEFORE_COMPLETION_REQUEST = 0x13;
 
-    private final ChannelAssociation channelAssociation;
-    private final DeploymentRepository deploymentRepository;
-    private final EJBRemoteTransactionsRepository transactionsRepository;
-    private final MarshallerFactory marshallerFactory;
-    private final ExecutorService executorService;
-    private final RegistryCollector<String, List<ClientMapping>> clientMappingRegistryCollector;
-    private final Set<ClusterTopologyUpdateListener> clusterTopologyUpdateListeners = Collections.synchronizedSet(new HashSet<ClusterTopologyUpdateListener>());
-    private final RemoteAsyncInvocationCancelStatusService remoteAsyncInvocationCancelStatus;
+
+    protected final ChannelAssociation channelAssociation;
+    protected final DeploymentRepository deploymentRepository;
+    protected final EJBRemoteTransactionsRepository transactionsRepository;
+    protected final MarshallerFactory marshallerFactory;
+    protected final ExecutorService executorService;
+    protected final RegistryCollector<String, List<ClientMapping>> clientMappingRegistryCollector;
+    protected final Set<ClusterTopologyUpdateListener> clusterTopologyUpdateListeners = Collections.synchronizedSet(new HashSet<ClusterTopologyUpdateListener>());
+    protected final RemoteAsyncInvocationCancelStatusService remoteAsyncInvocationCancelStatus;
 
     public VersionOneProtocolChannelReceiver(final ChannelAssociation channelAssociation, final DeploymentRepository deploymentRepository,
                                              final EJBRemoteTransactionsRepository transactionsRepository, final RegistryCollector<String, List<ClientMapping>> clientMappingRegistryCollector,
@@ -146,35 +148,10 @@ public class VersionOneProtocolChannelReceiver implements Channel.Receiver, Depl
             if (EjbLogger.ROOT_LOGGER.isTraceEnabled()) {
                 EjbLogger.ROOT_LOGGER.trace("Got message with header 0x" + Integer.toHexString(header) + " on channel " + channel);
             }
-            MessageHandler messageHandler = null;
-            switch (header) {
-                case HEADER_INVOCATION_REQUEST:
-                    messageHandler = new MethodInvocationMessageHandler(this.deploymentRepository, this.marshallerFactory, this.executorService, this.remoteAsyncInvocationCancelStatus);
-                    break;
-                case HEADER_INVOCATION_CANCELLATION_REQUEST:
-                    messageHandler = new InvocationCancellationMessageHandler(this.remoteAsyncInvocationCancelStatus);
-                    break;
-                case HEADER_SESSION_OPEN_REQUEST:
-                    messageHandler = new SessionOpenRequestHandler(this.deploymentRepository, this.marshallerFactory, this.executorService);
-                    break;
-                case HEADER_TX_COMMIT_REQUEST:
-                    messageHandler = new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.COMMIT);
-                    break;
-                case HEADER_TX_ROLLBACK_REQUEST:
-                    messageHandler = new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.ROLLBACK);
-                    break;
-                case HEADER_TX_FORGET_REQUEST:
-                    messageHandler = new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.FORGET);
-                    break;
-                case HEADER_TX_PREPARE_REQUEST:
-                    messageHandler = new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.PREPARE);
-                    break;
-                case HEADER_TX_BEFORE_COMPLETION_REQUEST:
-                    messageHandler = new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.BEFORE_COMPLETION);
-                    break;
-                default:
-                    EjbLogger.ROOT_LOGGER.unsupportedMessageHeader(Integer.toHexString(header), channel);
-                    return;
+            final MessageHandler messageHandler = getMessageHandler((byte) header);
+            if (messageHandler == null) {
+                EjbLogger.ROOT_LOGGER.unsupportedMessageHeader(Integer.toHexString(header), channel);
+                return;
             }
             // process the message
             messageHandler.processMessage(channelAssociation, messageInputStream);
@@ -188,6 +165,35 @@ public class VersionOneProtocolChannelReceiver implements Channel.Receiver, Depl
             IoUtils.safeClose(channel);
         } finally {
             IoUtils.safeClose(messageInputStream);
+        }
+    }
+
+    /**
+     * Returns a {@link MessageHandler} which can handle a message represented by the passed <code>header</code>. Returns null if there's no such {@link MessageHandler}
+     *
+     * @param header The message header
+     * @return
+     */
+    protected MessageHandler getMessageHandler(final byte header) {
+        switch (header) {
+            case HEADER_INVOCATION_REQUEST:
+                return new MethodInvocationMessageHandler(this.deploymentRepository, this.marshallerFactory, this.executorService, this.remoteAsyncInvocationCancelStatus);
+            case HEADER_INVOCATION_CANCELLATION_REQUEST:
+                return new InvocationCancellationMessageHandler(this.remoteAsyncInvocationCancelStatus);
+            case HEADER_SESSION_OPEN_REQUEST:
+                return new SessionOpenRequestHandler(this.deploymentRepository, this.marshallerFactory, this.executorService);
+            case HEADER_TX_COMMIT_REQUEST:
+                return new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.COMMIT);
+            case HEADER_TX_ROLLBACK_REQUEST:
+                return new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.ROLLBACK);
+            case HEADER_TX_FORGET_REQUEST:
+                return new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.FORGET);
+            case HEADER_TX_PREPARE_REQUEST:
+                return new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.PREPARE);
+            case HEADER_TX_BEFORE_COMPLETION_REQUEST:
+                return new TransactionRequestHandler(this.transactionsRepository, this.marshallerFactory, this.executorService, TransactionRequestHandler.TransactionRequestType.BEFORE_COMPLETION);
+            default:
+                return null;
         }
     }
 
@@ -414,7 +420,15 @@ public class VersionOneProtocolChannelReceiver implements Channel.Receiver, Depl
             outputStream = new DataOutputStream(messageOutputStream);
             final ClusterTopologyWriter clusterTopologyWriter = new ClusterTopologyWriter();
             try {
-                EjbLogger.ROOT_LOGGER.debug(removedNodes.size() + " nodes removed from cluster " + clusterName + ", writing a protocol message to channel " + this.channelReceiver.channelAssociation.getChannel());
+                if (EjbLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    EjbLogger.ROOT_LOGGER.debug("Following " + removedNodes.size() + " nodes removed from cluster " + clusterName + ", writing a protocol message to channel " + this.channelReceiver.channelAssociation.getChannel());
+                    final StringBuffer sb = new StringBuffer();
+                    for (final String nodeName : removedNodes) {
+                        sb.append(nodeName);
+                        sb.append("\n");
+                    }
+                    EjbLogger.ROOT_LOGGER.debug(sb.toString());
+                }
                 clusterTopologyWriter.writeNodesRemoved(outputStream, clusterName, removedNodes);
             } finally {
                 channelAssociation.releaseChannelMessageOutputStream(messageOutputStream);
@@ -433,7 +447,16 @@ public class VersionOneProtocolChannelReceiver implements Channel.Receiver, Depl
             outputStream = new DataOutputStream(messageOutputStream);
             final ClusterTopologyWriter clusterTopologyWriter = new ClusterTopologyWriter();
             try {
-                EjbLogger.ROOT_LOGGER.debug(addedNodes.size() + " nodes added to cluster " + clusterName + ", writing a protocol message to channel " + this.channelReceiver.channelAssociation.getChannel());
+                if (EjbLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    EjbLogger.ROOT_LOGGER.debug("Following " + addedNodes.size() + " nodes added to cluster " + clusterName + ", writing a protocol message to channel " + this.channelReceiver.channelAssociation.getChannel());
+                    final StringBuffer sb = new StringBuffer();
+                    for (final String nodeName : addedNodes.keySet()) {
+                        sb.append(nodeName);
+                        sb.append("\n");
+                    }
+                    EjbLogger.ROOT_LOGGER.debug(sb.toString());
+                }
+
                 clusterTopologyWriter.writeNewNodesAdded(outputStream, clusterName, addedNodes);
             } finally {
                 channelAssociation.releaseChannelMessageOutputStream(messageOutputStream);
