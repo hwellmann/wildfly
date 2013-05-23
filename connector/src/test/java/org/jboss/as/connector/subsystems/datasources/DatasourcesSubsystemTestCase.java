@@ -113,7 +113,8 @@ public class DatasourcesSubsystemTestCase extends AbstractSubsystemBaseTest {
             // Add legacy subsystems
             builder.createLegacyKernelServicesBuilder(null, modelVersion)
                     .addMavenResourceURL("org.jboss.as:jboss-as-connector:" + mavenVersion)
-                    .setExtensionClassName("org.jboss.as.connector.subsystems.datasources.DataSourcesExtension");
+                    .setExtensionClassName("org.jboss.as.connector.subsystems.datasources.DataSourcesExtension")
+                    .configureReverseControllerCheck(AdditionalInitialization.MANAGEMENT, null);
 
             KernelServices mainServices = builder.build();
             Assert.assertTrue(mainServices.isSuccessfulBoot());

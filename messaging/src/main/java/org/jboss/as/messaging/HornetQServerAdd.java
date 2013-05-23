@@ -119,7 +119,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
-import org.jboss.as.messaging.HornetQService.PathConfig;
 import org.jboss.as.messaging.jms.JMSService;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.network.SocketBinding;
@@ -228,9 +227,7 @@ class HornetQServerAdd implements OperationStepHandler {
 
                 // Create the HornetQ Service
                 final HornetQService hqService = new HornetQService(
-                        new PathConfig(bindingsPath, bindingsRelativeToPath, journalPath, journalRelativeToPath, largeMessagePath, largeMessageRelativeToPath, pagingPath, pagingRelativeToPath));
-
-                hqService.setConfiguration(configuration);
+                        configuration, new HornetQService.PathConfig(bindingsPath, bindingsRelativeToPath, journalPath, journalRelativeToPath, largeMessagePath, largeMessageRelativeToPath, pagingPath, pagingRelativeToPath));
 
                 // Add the HornetQ Service
                 ServiceName hqServiceName = MessagingServices.getHornetQServiceName(serverName);
@@ -271,6 +268,8 @@ class HornetQServerAdd implements OperationStepHandler {
                                 hqService.getSocketBindingInjector(outboundSocketBinding));
                     }
                 }
+                //this requires connectors
+                BroadcastGroupAdd.addBroadcastGroupConfigs(context, configuration, model);
 
                 final List<BroadcastGroupConfiguration> broadcastGroupConfigurations = configuration.getBroadcastGroupConfigurations();
                 final Map<String, DiscoveryGroupConfiguration> discoveryGroupConfigurations = configuration.getDiscoveryGroupConfigurations();
@@ -366,13 +365,13 @@ class HornetQServerAdd implements OperationStepHandler {
         configuration.setJournalType(journalType);
 
         // AIO Journal
-        configuration.setJournalBufferSize_AIO(JOURNAL_BUFFER_SIZE.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.DEFAULT_JOURNAL_BUFFER_SIZE_AIO));
-        configuration.setJournalBufferTimeout_AIO(JOURNAL_BUFFER_TIMEOUT.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO));
-        configuration.setJournalMaxIO_AIO(JOURNAL_MAX_IO.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.DEFAULT_JOURNAL_MAX_IO_AIO));
+        configuration.setJournalBufferSize_AIO(JOURNAL_BUFFER_SIZE.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.getDefaultJournalBufferSizeAio()));
+        configuration.setJournalBufferTimeout_AIO(JOURNAL_BUFFER_TIMEOUT.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.getDefaultJournalBufferTimeoutAio()));
+        configuration.setJournalMaxIO_AIO(JOURNAL_MAX_IO.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.getDefaultJournalMaxIoAio()));
         // NIO Journal
-        configuration.setJournalBufferSize_NIO(JOURNAL_BUFFER_SIZE.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.DEFAULT_JOURNAL_BUFFER_SIZE_NIO));
-        configuration.setJournalBufferTimeout_NIO(JOURNAL_BUFFER_TIMEOUT.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO));
-        configuration.setJournalMaxIO_NIO(JOURNAL_MAX_IO.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.DEFAULT_JOURNAL_MAX_IO_NIO));
+        configuration.setJournalBufferSize_NIO(JOURNAL_BUFFER_SIZE.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.getDefaultJournalBufferSizeNio()));
+        configuration.setJournalBufferTimeout_NIO(JOURNAL_BUFFER_TIMEOUT.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.getDefaultJournalBufferTimeoutNio()));
+        configuration.setJournalMaxIO_NIO(JOURNAL_MAX_IO.resolveModelAttribute(context, model).asInt(HornetQDefaultConfiguration.getDefaultJournalMaxIoNio()));
         //
         configuration.setJournalCompactMinFiles(JOURNAL_COMPACT_MIN_FILES.resolveModelAttribute(context, model).asInt());
         configuration.setJournalCompactPercentage(JOURNAL_COMPACT_PERCENTAGE.resolveModelAttribute(context, model).asInt());
@@ -424,7 +423,6 @@ class HornetQServerAdd implements OperationStepHandler {
 
         // Add in items from child resources
         GroupingHandlerAdd.addGroupingHandlerConfig(context,configuration, model);
-        BroadcastGroupAdd.addBroadcastGroupConfigs(context, configuration, model);
         DiscoveryGroupAdd.addDiscoveryGroupConfigs(context, configuration, model);
         DivertAdd.addDivertConfigs(context, configuration, model);
         QueueAdd.addQueueConfigs(context, configuration, model);

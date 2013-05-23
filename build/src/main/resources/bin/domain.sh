@@ -11,6 +11,7 @@ MAX_FD="maximum"
 cygwin=false;
 darwin=false;
 linux=false;
+solaris=false;
 case "`uname`" in
     CYGWIN*)
         cygwin=true
@@ -22,6 +23,9 @@ case "`uname`" in
 
     Linux)
         linux=true
+        ;;
+    SunOS*)
+        solaris=true
         ;;
 esac
 
@@ -115,15 +119,62 @@ if $linux; then
     # process the host-controller options
     for var in $HOST_CONTROLLER_OPTS
     do
-      case $var in
+       # Remove quotes
+      p=`echo $var | tr -d '"'`
+      case $p in
         -Djboss.domain.base.dir=*)
-             JBOSS_BASE_DIR=`readlink -m ${var#*=}`
+             JBOSS_BASE_DIR=`readlink -m ${p#*=}`
              ;;
         -Djboss.domain.log.dir=*)
-             JBOSS_LOG_DIR=`readlink -m ${var#*=}`
+             JBOSS_LOG_DIR=`readlink -m ${p#*=}`
              ;;
         -Djboss.domain.config.dir=*)
-             JBOSS_CONFIG_DIR=`readlink -m ${var#*=}`
+             JBOSS_CONFIG_DIR=`readlink -m ${p#*=}`
+             ;;
+      esac
+    done
+fi
+
+if $solaris; then
+    # consolidate the host-controller and command line opts
+    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $@"
+    # process the host-controller options
+    for var in $HOST_CONTROLLER_OPTS
+    do
+       # Remove quotes
+      p=`echo $var | tr -d '"'`
+      case $p in
+        -Djboss.domain.base.dir=*)
+             JBOSS_BASE_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -Djboss.domain.log.dir=*)
+             JBOSS_LOG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -Djboss.domain.config.dir=*)
+             JBOSS_CONFIG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+      esac
+    done
+fi
+
+# No readlink -m on BSD
+if $darwin; then
+    # consolidate the host-controller and command line opts
+    HOST_CONTROLLER_OPTS="$HOST_CONTROLLER_JAVA_OPTS $@"
+    # process the host-controller options
+    for var in $HOST_CONTROLLER_OPTS
+    do
+       # Remove quotes
+       p=`echo $var | tr -d '"'`
+       case $p in
+        -Djboss.domain.base.dir=*)
+             JBOSS_BASE_DIR=`cd ${p#*=} ; pwd -P`
+             ;;
+        -Djboss.domain.log.dir=*)
+             JBOSS_LOG_DIR=`cd ${p#*=} ; pwd -P`
+             ;;
+        -Djboss.domain.config.dir=*)
+             JBOSS_CONFIG_DIR=`cd ${p#*=} ; pwd -P`
              ;;
       esac
     done

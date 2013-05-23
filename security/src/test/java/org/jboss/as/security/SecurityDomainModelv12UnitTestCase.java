@@ -135,6 +135,7 @@ public class SecurityDomainModelv12UnitTestCase extends AbstractSubsystemBaseTes
                 .addParentFirstClassPattern("org.jboss.as.controller.*")
                 .dontPersistXml();
 
+
         KernelServices mainServices = builder.build();
         Assert.assertTrue(mainServices.isSuccessfulBoot());
         Assert.assertTrue(mainServices.getLegacyServices(modelVersion).isSuccessfulBoot());

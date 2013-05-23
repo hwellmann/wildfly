@@ -319,27 +319,18 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
                     Injection injector = new Injection();
                     for (ConfigProperty cpmd : configs) {
                         if (cpmd.isValueSet()) {
-                            boolean setValue = true;
 
-                            if (cpmd instanceof org.jboss.jca.common.api.metadata.ra.ra16.ConfigProperty16) {
-                                org.jboss.jca.common.api.metadata.ra.ra16.ConfigProperty16 cpmd16 = (org.jboss.jca.common.api.metadata.ra.ra16.ConfigProperty16) cpmd;
-
-                                if (cpmd16.getConfigPropertyIgnore() != null && cpmd16.getConfigPropertyIgnore().booleanValue())
-                                    setValue = false;
+                            if (XsdString.isNull(cpmd.getConfigPropertyType())) {
+                                injector.inject(o,
+                                        cpmd.getConfigPropertyName().getValue(),
+                                        cpmd.getConfigPropertyValue().getValue());
+                            } else {
+                                injector.inject(o,
+                                        cpmd.getConfigPropertyName().getValue(),
+                                        cpmd.getConfigPropertyValue().getValue(),
+                                        cpmd.getConfigPropertyType().getValue());
                             }
 
-                            if (setValue) {
-                                if (XsdString.isNull(cpmd.getConfigPropertyType())) {
-                                    injector.inject(o,
-                                            cpmd.getConfigPropertyName().getValue(),
-                                            cpmd.getConfigPropertyValue().getValue());
-                                } else {
-                                    injector.inject(o,
-                                            cpmd.getConfigPropertyName().getValue(),
-                                            cpmd.getConfigPropertyValue().getValue(),
-                                            cpmd.getConfigPropertyType().getValue());
-                                }
-                            }
                         }
                     }
                 }
@@ -423,7 +414,7 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
             }
 
             setMcfProperties(xaManagedConnectionFactory, xaDataSourceConfig, xaDataSourceConfig.getStatement());
-            xaManagedConnectionFactory.setUserTransactionJndiName("java:comp/UserTransaction");
+            xaManagedConnectionFactory.setUserTransactionJndiName("java:jboss/UserTransaction");
             return xaManagedConnectionFactory;
 
         }
@@ -432,7 +423,7 @@ public abstract class AbstractDataSourceService implements Service<DataSource> {
         protected ManagedConnectionFactory createMcf(org.jboss.jca.common.api.metadata.ds.DataSource arg0, String arg1,
                 ClassLoader arg2) throws NotFoundException, DeployException {
             final LocalManagedConnectionFactory managedConnectionFactory = new LocalManagedConnectionFactory();
-            managedConnectionFactory.setUserTransactionJndiName("java:comp/UserTransaction");
+            managedConnectionFactory.setUserTransactionJndiName("java:jboss/UserTransaction");
             managedConnectionFactory.setDriverClass(dataSourceConfig.getDriverClass());
 
             if (dataSourceConfig.getUrlDelimiter() != null) {

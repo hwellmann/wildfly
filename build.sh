@@ -162,10 +162,13 @@ main() {
     TESTS=$SMOKE_TESTS
     MVN_GOAL="";
     ADDIT_PARAMS="";
+    LOCAL_REPO="-Dmaven.repo.local=./local-repo-eap";
+
     #  For each parameter, check for testsuite directives.
     for param in $@ ; do
         case $param in
             ## -s .../settings.xml - don't use our own.
+            -Dmaven.repo.local*)  LOCAL_REPO="$param";;
             -s)      MVN_SETTINGS_XML_ARGS="";   ADDIT_PARAMS="$ADDIT_PARAMS $param";;
             -*)      ADDIT_PARAMS="$ADDIT_PARAMS $param";;
             clean)   MVN_GOAL="$MVN_GOAL$param ";;
@@ -177,7 +180,7 @@ main() {
         esac
     done
     #  Default goal if none specified.
-    if [ -z "$MVN_GOAL" ]; then MVN_GOAL="install"; fi
+    if [ -z "$MVN_GOAL" ]; then MVN_GOAL="clean install"; fi
 
     MVN_GOAL="$MVN_GOAL $TESTS"
 
@@ -187,13 +190,13 @@ main() {
     # The default arguments.  `mvn -s ...` will override this.
     MVN_ARGS=${MVN_ARGS:-"$MVN_SETTINGS_XML_ARGS"};
 
-    echo "$MVN $MVN_ARGS $MVN_GOAL $ADDIT_PARAMS"
+    echo "$MVN $MVN_ARGS $MVN_GOAL $ADDIT_PARAMS $LOCAL_REPO"
 
     #  Execute in debug mode, or simply execute.
     if [ "x$MVN_DEBUG" != "x" ]; then
-        /bin/sh -x $MVN $MVN_ARGS $MVN_GOAL $ADDIT_PARAMS
+        /bin/sh -x $MVN $MVN_ARGS $MVN_GOAL $ADDIT_PARAMS $LOCAL_REPO
     else
-        exec       $MVN $MVN_ARGS $MVN_GOAL $ADDIT_PARAMS
+        exec       $MVN $MVN_ARGS $MVN_GOAL $ADDIT_PARAMS $LOCAL_REPO
     fi
 }
 

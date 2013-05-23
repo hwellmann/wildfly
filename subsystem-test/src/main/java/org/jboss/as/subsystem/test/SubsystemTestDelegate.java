@@ -586,7 +586,7 @@ final class SubsystemTestDelegate {
                     }
                 }
 
-                KernelServicesImpl legacyServices = legacyInitializer.install(transformedBootOperations);
+                KernelServicesImpl legacyServices = legacyInitializer.install(kernelServices, transformedBootOperations);
                 kernelServices.addLegacyKernelService(entry.getKey(), legacyServices);
             }
 
@@ -618,9 +618,12 @@ final class SubsystemTestDelegate {
 
         private final AdditionalInitialization additionalInit;
         private String extensionClassName;
-        private ModelVersion modelVersion;
-        ChildFirstClassLoaderBuilder classLoaderBuilder = new ChildFirstClassLoaderBuilder();
+        private final ModelVersion modelVersion;
+        private final ChildFirstClassLoaderBuilder classLoaderBuilder = new ChildFirstClassLoaderBuilder();
         private boolean persistXml = true;
+        private boolean skipReverseCheck;
+        private AdditionalInitialization reverseCheckConfig;
+        private ModelFixer reverseCheckModelFixer;
 
         public LegacyKernelServiceInitializerImpl(AdditionalInitialization additionalInit, ModelVersion modelVersion) {
             this.additionalInit = additionalInit == null ? AdditionalInitialization.MANAGEMENT : additionalInit;
@@ -664,7 +667,11 @@ final class SubsystemTestDelegate {
             return this;
         }
 
-        private KernelServicesImpl install(List<ModelNode> bootOperations) throws Exception {
+        private KernelServicesImpl install(KernelServices mainServices, List<ModelNode> bootOperations) throws Exception {
+            if (!skipReverseCheck) {
+                bootCurrentVersionWithLegacyBootOperations(bootOperations, mainServices);
+            }
+
             ClassLoader legacyCl = classLoaderBuilder.build();
 
             Class<?> clazz = legacyCl.loadClass(extensionClassName != null ? extensionClassName : mainExtension.getClass().getName());
@@ -688,7 +695,49 @@ final class SubsystemTestDelegate {
             persistXml = false;
             return this;
         }
+
+        @Override
+        public LegacyKernelServicesInitializer skipReverseControllerCheck() {
+            skipReverseCheck = true;
+            return this;
+        }
+
+        @Override
+        public LegacyKernelServicesInitializer configureReverseControllerCheck(AdditionalInitialization additionalInit,
+                ModelFixer modelFixer) {
+            this.reverseCheckConfig = additionalInit;
+            this.reverseCheckModelFixer = modelFixer;
+            return this;
+        }
+
+        private KernelServices bootCurrentVersionWithLegacyBootOperations(List<ModelNode> bootOperations, KernelServices mainServices) throws Exception {
+            //Clone the boot operations to avoid any pollution installing them in the main controller
+            List<ModelNode> clonedBootOperations = new ArrayList<ModelNode>();
+            for (ModelNode op : bootOperations) {
+                clonedBootOperations.add(op.clone());
+            }
+
+            KernelServices reverseServices = createKernelServicesBuilder(reverseCheckConfig)
+                .setBootOperations(clonedBootOperations)
+                .build();
+            if (reverseServices.getBootError() != null) {
+                Throwable t = reverseServices.getBootError();
+                if (t instanceof Exception) {
+                    throw (Exception)t;
+                }
+                throw new Exception(t);
+            }
+            Assert.assertTrue(reverseServices.isSuccessfulBoot());
+
+            ModelNode reverseSubsystem = reverseServices.readWholeModel().get(SUBSYSTEM, getMainSubsystemName());
+            if (reverseCheckModelFixer != null) {
+                reverseCheckModelFixer.fixModel(reverseSubsystem);
+            }
+            ModelTestUtils.compare(mainServices.readWholeModel().get(SUBSYSTEM, getMainSubsystemName()), reverseSubsystem);
+            return reverseServices;
+        }
     }
+
     @SuppressWarnings("deprecation")
     private final ManagementResourceRegistration MOCK_RESOURCE_REG = new ManagementResourceRegistration() {
 

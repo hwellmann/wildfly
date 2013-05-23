@@ -17,6 +17,8 @@
  */
 package org.jboss.as.test.integration.domain.management.util;
 
+import javax.security.auth.callback.CallbackHandler;
+
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.deployment.Validate;
 import org.jboss.as.arquillian.container.CommonContainerConfiguration;
@@ -30,6 +32,8 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
     private String jbossHome = System.getProperty("jboss.home");
 
     private String javaHome = System.getenv("JAVA_HOME");
+
+    private String controllerJavaHome = System.getenv("JAVA_HOME");
 
     private String modulePath = System.getProperty("module.path");
 
@@ -55,6 +59,8 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
 
     private boolean adminOnly;
 
+    private CallbackHandler callbackHandler = Authentication.getCallbackHandler();
+
     public JBossAsManagedConfiguration(JBossAsManagedConfigurationParameters params) {
         this.jbossHome = params.getJBossHome();
         this.modulePath = params.getModuleBaseDir();
@@ -71,6 +77,9 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
         Validate.configurationDirectoryExists(jbossHome, "jbossHome must exist");
         if (javaHome != null) {
             Validate.configurationDirectoryExists(javaHome, "javaHome must exist");
+        }
+        if (controllerJavaHome != null) {
+            Validate.configurationDirectoryExists(javaHome, "controllerJavaHome must exist");
         }
     }
 
@@ -102,6 +111,19 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
         this.javaHome = javaHome;
     }
 
+    /**
+     * @return the controllerJavaHome
+     */
+    public String getControllerJavaHome() {
+        return controllerJavaHome;
+    }
+
+    /**
+     * @param controllerJavaHome the javaHome to set
+     */
+    public void setControllerJavaHome(String controllerJavaHome) {
+        this.controllerJavaHome = controllerJavaHome;
+    }
     /**
      * @return the javaVmArguments
      */
@@ -215,4 +237,13 @@ public class JBossAsManagedConfiguration extends CommonContainerConfiguration {
     public void setAdminOnly(boolean adminOnly) {
         this.adminOnly = adminOnly;
     }
+
+    public CallbackHandler getCallbackHandler() {
+        return callbackHandler;
+    }
+
+    public void setCallbackHandler(CallbackHandler callbackHandler) {
+        this.callbackHandler = callbackHandler;
+    }
+
 }

@@ -39,6 +39,7 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.PROPERTY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PLUG_IN;
 import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
 
+import java.security.KeyPair;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +60,7 @@ import org.jboss.as.domain.management.SSLIdentity;
 import org.jboss.as.domain.management.connections.ConnectionManager;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -200,7 +202,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         }
         PlugInLoaderService loaderService = new PlugInLoaderService(Collections.unmodifiableList(knownNames));
         ServiceBuilder<PlugInLoaderService> builder = serviceTarget.addService(plugInLoaderName, loaderService);
-        newControllers.add(builder.setInitialMode(Mode.ON_DEMAND).install());
+        final ServiceController<PlugInLoaderService> sc = builder.setInitialMode(Mode.ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(sc);
+        }
 
         return plugInLoaderName;
     }
@@ -211,8 +216,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ClientCertCallbackHandler clientCertCallbackHandler = new ClientCertCallbackHandler();
 
         ServiceBuilder<?> ccBuilder = serviceTarget.addService(clientCertServiceName, clientCertCallbackHandler);
-
-        newControllers.add(ccBuilder.setInitialMode(ON_DEMAND).install());
+        final ServiceController<?> sc = ccBuilder.setInitialMode(ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(sc);
+        }
 
         return clientCertServiceName;
     }
@@ -229,7 +236,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                     ServerSecurityManager.class, jaasCallbackHandler.getSecurityManagerValue());
         }
 
-        newControllers.add(jaasBuilder.setInitialMode(ON_DEMAND).install());
+        final ServiceController<?> sc = jaasBuilder.setInitialMode(ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(sc);
+        }
 
         return jaasServiceName;
     }
@@ -271,8 +281,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         LocalCallbackHandlerService localCallbackHandler = new LocalCallbackHandlerService(defaultUser, allowedUsers);
 
         ServiceBuilder<?> jaasBuilder = serviceTarget.addService(localServiceName, localCallbackHandler);
-
-        newControllers.add(jaasBuilder.setInitialMode(ON_DEMAND).install());
+        final ServiceController<?> serviceController = jaasBuilder.setInitialMode(ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(serviceController);
+        }
 
         return localServiceName;
     }
@@ -292,7 +304,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceBuilder<CallbackHandlerService> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInService);
         plugInBuilder.addDependency(plugInLoaderName, PlugInLoaderService.class, plugInService.getPlugInLoaderServiceValue());
 
-        newControllers.add(plugInBuilder.setInitialMode(ON_DEMAND).install());
+        final ServiceController<CallbackHandlerService> sc = plugInBuilder.setInitialMode(ON_DEMAND).install();
+        if(newControllers != null) {
+            newControllers.add(sc);
+        }
 
         return plugInServiceName;
     }
@@ -448,10 +463,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
     private ServiceName addSecretService(OperationContext context, ModelNode secret, ServiceName realmServiceName, ServiceTarget serviceTarget, List<ServiceController<?>> newControllers) throws OperationFailedException {
         ServiceName secretServiceName = realmServiceName.append(SecretIdentityService.SERVICE_SUFFIX);
 
-        ModelNode secretValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
-        String resolvedValue = context.resolveExpressions(secretValueNode).asString();
+        ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
+        boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
 
-        SecretIdentityService sis = new SecretIdentityService(resolvedValue, secretValueNode.asString().equals(resolvedValue));
+        SecretIdentityService sis = new SecretIdentityService(resolvedValueNode.asString(), base64);
         final ServiceController<CallbackHandlerFactory> serviceController = serviceTarget.addService(secretServiceName, sis)
                 .setInitialMode(ON_DEMAND)
                 .install();
@@ -478,6 +493,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         return usersServiceName;
     }
+
+
 
     private static ServiceName pathName(String relativeTo) {
         return ServiceName.JBOSS.append("server", "path", relativeTo);

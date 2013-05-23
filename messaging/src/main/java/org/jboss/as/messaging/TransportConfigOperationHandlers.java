@@ -54,7 +54,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-
 /**
  * Basic {@link TransportConfiguration} (Acceptor/Connector) related operations.
  *
