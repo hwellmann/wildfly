@@ -31,9 +31,9 @@
     <target name="copy-files">
         <copy todir="${output.dir}">
             <fileset dir="src/main/resources">
+                <include name="JBossEULA.txt"/>
                 <include name="LICENSE.txt"/>
-                <include name="README.txt"/>
-                <include name="copyright.txt"/>
+                <include name="version.txt"/>
                 <include name="appclient/**"/>
                 <include name="bin/**"/>
                 <include name="docs/**"/>
@@ -197,10 +197,6 @@
             <maven-resource group="org.jboss.as" artifact="jboss-as-deployment-repository"/>
         </module-def>
 
-        <module-def name="org.jboss.as.domain-http-error-context">
-            <maven-resource group="org.jboss.as" artifact="jboss-as-domain-http-error-context"/>
-        </module-def>
-
         <module-def name="org.jboss.as.domain-http-interface">
             <maven-resource group="org.jboss.as" artifact="jboss-as-domain-http-interface"/>
         </module-def>
@@ -338,7 +334,22 @@
 
     </target>
 
-    <target name="modules" depends="modules-minimalistic">
+    <target name="modules-product">
+        <!--
+          ~ Product configuration modules.
+          -->
+
+        <module-def name="org.jboss.as.console" slot="eap">
+            <maven-resource-with-classifier group="org.jboss.as" artifact="jboss-as-console" classifier="resources"/>
+        </module-def>
+
+        <module-def name="org.jboss.as.domain-http-error-context" slot="eap"/>
+
+        <module-def name="org.jboss.as.product" slot="eap"/>
+
+    </target>
+
+    <target name="modules" depends="modules-minimalistic, modules-product">
         <!--
           ~ Complete list of modules to assemble.
           ~
@@ -767,10 +778,6 @@
             <maven-resource group="org.jboss.as" artifact="jboss-as-appclient"/>
         </module-def>
 
-        <module-def name="org.jboss.as.console">
-            <maven-resource-with-classifier group="org.jboss.as" artifact="jboss-as-console" classifier="resources"/>
-        </module-def>
-
         <module-def name="org.jboss.as.cli">
             <maven-resource group="org.jboss.as" artifact="jboss-as-cli"/>
         </module-def>
@@ -883,10 +890,6 @@
 
         <module-def name="org.jboss.as.jpa.hibernate" slot="4">
             <maven-resource group="org.jboss.as" artifact="jboss-as-jpa-hibernate4"/>
-        </module-def>
-
-        <module-def name="org.jboss.as.jpa.openjpa">
-            <maven-resource group="org.jboss.as" artifact="jboss-as-jpa-openjpa"/>
         </module-def>
 
         <module-def name="org.jboss.as.jpa.spi">

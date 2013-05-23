@@ -58,7 +58,7 @@ public class DomainTransformers {
     private static final ModelVersion VERSION_1_2 = ModelVersion.create(1, 2, 0);
     //AS 7.1.3.Final
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3, 0);
-    //AS 7.2.0.Final
+    //AS 7.2.0.Alpha1-redhat-4
     private static final ModelVersion VERSION_1_4 = ModelVersion.create(1, 4, 0);
     /**
      * Initialize the domain registry.
