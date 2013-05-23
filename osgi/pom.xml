@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.jboss.as</groupId>
         <artifactId>jboss-as-parent</artifactId>
-        <version>7.2.0.Alpha1-redhat-4</version>
+        <version>7.2.0.Final-redhat-4</version>
     </parent>
 
     <groupId>org.jboss.as</groupId>
@@ -41,7 +41,21 @@
 
     <modules>
         <module>service</module>
-        <module>launcher</module>
         <module>integration</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>testsuite</id>
+            <activation>
+                <property>
+                    <name>public-repos</name>
+                </property>
+            </activation>
+            <modules>
+                <module>launcher</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>

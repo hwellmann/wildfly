@@ -3,7 +3,7 @@
   <parent>
     <artifactId>jboss-as-parent</artifactId>
     <groupId>org.jboss.as</groupId>
-    <version>7.2.0.Alpha1-redhat-4</version>
+    <version>7.2.0.Final-redhat-4</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -16,12 +16,6 @@
         with different versions on classes on the class path).</description>
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
@@ -39,14 +33,14 @@
     <dependency>
       <groupId>org.jboss.as</groupId>
       <artifactId>jboss-as-ejb-client-bom</artifactId>
-      <version>7.2.0.Alpha1-redhat-4</version>
+      <version>7.2.0.Final-redhat-4</version>
       <type>pom</type>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.jboss.as</groupId>
       <artifactId>jboss-as-jms-client-bom</artifactId>
-      <version>7.2.0.Alpha1-redhat-4</version>
+      <version>7.2.0.Final-redhat-4</version>
       <type>pom</type>
       <scope>compile</scope>
     </dependency>

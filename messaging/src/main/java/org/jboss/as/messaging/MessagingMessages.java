@@ -532,4 +532,26 @@ public interface MessagingMessages {
      */
     @Message(id = 11676, value = "No resource exists at address %s")
     String hqServerManagementServiceResourceNotFound(PathAddress address);
+
+    @Message(id = 11677, value = "Can not change the clustered attribute to false: The hornetq-server resource at %s has cluster-connection children resources and will remain clustered.")
+    String canNotChangeClusteredAttribute(PathAddress address);
+
+    @Message(id = 11678, value = "Resource at the address %s can not be managed, the hornetq-server is in backup mode")
+    String hqServerInBackupMode(PathAddress address);
+
+    /**
+     * Create a failure description message indicating that the there are no connectors defined.
+     *
+     * @return an {@link OperationFailedException} for the error.
+     */
+    @Message(id = 11679, value = "No connectors definition present.")
+    OperationFailedException noConnectors();
+
+    /**
+     * Create a failure description message indicating that the there are no connectors defined.
+     *
+     * @return an {@link OperationFailedException} for the error.
+     */
+    @Message(id = 11680, value = "The broadcast group '%s' defines reference to nonexistent connector '%s'. Available connectors '%s'.")
+    OperationFailedException wrongConnectorRefInBroadCastGroup(final String bgName, final String connectorRef, final Collection<String> presentConnectors);
 }

@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.jboss.as</groupId>
         <artifactId>jboss-as-parent</artifactId>
-        <version>7.2.0.Alpha1-redhat-4</version>
+        <version>7.2.0.Final-redhat-4</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -73,6 +73,7 @@
             Don't deploy this to the maven repo. Shaded jars cause nothing but trouble for maven
             users, so we don't want to make it easy for them to shoot themselves in the foot.
             -->
+            <!-- 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
@@ -80,6 +81,7 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

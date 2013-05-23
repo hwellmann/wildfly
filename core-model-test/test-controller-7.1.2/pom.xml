@@ -29,18 +29,17 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>10</version>
+      <version>10-redhat-1</version>
       <relativePath></relativePath>
     </parent>
 
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-core-model-test-controller-7.1.2</artifactId>
     <name>JBoss Application Server: Core Model Test Controller 7.1.2</name>
-    <version>7.2.0.Alpha1-redhat-4</version>
+    <version>7.2.0.Final-redhat-4</version>
 
     <properties>
         <property.old.as.version>7.1.2.Final</property.old.as.version>
-        <version.org.zanata.plugin>1.5.0</version.org.zanata.plugin>
     </properties>
 
     <dependencies>
@@ -73,7 +72,6 @@
             <plugin>
                 <groupId>org.zanata</groupId>
                 <artifactId>zanata-maven-plugin</artifactId>
-                <version>${version.org.zanata.plugin}</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

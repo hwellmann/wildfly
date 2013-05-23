@@ -181,9 +181,7 @@
 
         <module-def name="javax.xml.stream.api"/>
 
-        <module-def name="org.apache.log4j">
-            <maven-resource group="log4j" artifact="log4j"/>
-        </module-def>
+        <module-def name="org.apache.log4j"/>
 
         <module-def name="org.jboss.as.controller">
             <maven-resource group="org.jboss.as" artifact="jboss-as-controller"/>
@@ -616,7 +614,7 @@
             <maven-resource group="org.apache.cxf" artifact="cxf-rt-ws-mex"/>
             <maven-resource group="org.apache.cxf" artifact="cxf-rt-ws-policy"/>
             <maven-resource group="org.apache.cxf" artifact="cxf-rt-ws-rm"/>
-            <maven-resource group="org.apache.cxf" artifact="cxf-rt-ws-security" jandex="true"/>
+            <maven-resource group="org.apache.cxf" artifact="cxf-rt-ws-security"/>
             <maven-resource group="org.apache.cxf" artifact="cxf-tools-common"/>
             <maven-resource group="org.apache.cxf" artifact="cxf-tools-java2ws"/>
             <maven-resource group="org.apache.cxf" artifact="cxf-tools-validator"/>
@@ -998,7 +996,6 @@
             <maven-resource group="org.jboss.as" artifact="jboss-as-web"/>
             <maven-resource group="org.eclipse.jdt.core.compiler" artifact="ecj"/>
             <maven-resource group="org.jboss.web" artifact="jbossweb"/>
-            <extract-native-jar group="org.jboss.as" artifact="jbossweb-native"/>
         </module-def>
 
         <module-def name="org.jboss.as.webservices">
@@ -1294,8 +1291,8 @@
         </module-def>
 
         <module-def name="org.picketlink">
-            <maven-resource group="org.picketlink" artifact="picketlink-core" jandex="true"/>
-            <maven-resource group="org.picketlink.distribution" artifact="picketlink-jbas7" jandex="true"/>
+            <maven-resource group="org.picketlink" artifact="picketlink-core"/>
+            <maven-resource group="org.picketlink.distribution" artifact="picketlink-jbas7"/>
         </module-def>
 
         <module-def name="org.picketbox">

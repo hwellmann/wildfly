@@ -57,12 +57,12 @@
     <parent>
         <groupId>org.jboss.as</groupId>
         <artifactId>jboss-as-parent</artifactId>
-        <version>7.2.0.Alpha1-redhat-4</version>
+        <version>7.2.0.Final-redhat-4</version>
     </parent>
 
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-testsuite</artifactId>
-    <version>7.2.0.Alpha1-redhat-4</version>
+    <version>7.2.0.Final-redhat-4</version>
     <packaging>pom</packaging>
 
     <name>JBoss Application Server Test Suite: Aggregator</name>
@@ -513,13 +513,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <executions><execution><id>attach-sources</id><phase>none</phase></execution></executions>
-            </plugin>
-
-            <!-- Don't run checkstyle - nothing in src/java. -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <executions><execution><id>check-style</id><phase>none</phase></execution></executions>
             </plugin>
 
             <!-- Don't install - nothing to do. -->

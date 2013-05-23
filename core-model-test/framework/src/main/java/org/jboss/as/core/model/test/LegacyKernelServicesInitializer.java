@@ -21,17 +21,17 @@
 */
 package org.jboss.as.core.model.test;
 
+import java.util.Properties;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.model.test.ModelFixer;
 import org.jboss.dmr.ModelNode;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public interface LegacyKernelServicesInitializer {
-
-    String VERSION = "7.2.0.Alpha1-redhat-4";
 
     LegacyKernelServicesInitializer initializerCreateModelResource(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model);
 
@@ -48,13 +48,34 @@ public interface LegacyKernelServicesInitializer {
     LegacyKernelServicesInitializer setDontValidateOperations();
 
 
+    /**
+     * By default the {@link KernelServicesBuilder#build()} method will use the boot operations passed into the
+     * legacy controller and try to boot up the current controller with those. This is for checking that e.g. cli scripts written
+     * against the legacy controller still work with the current one. To turn this check off call this method.
+     *
+     * @return this initializer
+     */
+    LegacyKernelServicesInitializer skipReverseControllerCheck();
+
+    /**
+     * By default the {@link KernelServicesBuilder#build()} method will use the boot operations passed into the
+     * legacy controller and try to boot up the current controller with those. This is for checking that e.g. cli scripts written
+     * against the legacy controller still work with the current one. Configure how the models are compared with this method
+     *
+     * @param mainModelFixer a model fixer to fix up the main model before comparison
+     * @param legacyModelFixer a model fixer to fix up the model created from legacy boot operations before comparison
+     * @return this initializer
+     */
+    LegacyKernelServicesInitializer configureReverseControllerCheck(ModelFixer mainModelFixer, ModelFixer legacyModelFixer);
+
     public enum TestControllerVersion {
-        MASTER ("org.jboss.as:jboss-as-host-controller:" + VERSION, null),
-        V7_1_2_FINAL ("org.jboss.as:jboss-as-host-controller:7.1.2.Final", "7.1.2"),
-        V7_1_3_FINAL ("org.jboss.as:jboss-as-host-controller:7.1.3.Final", "7.1.3");
+        MASTER("org.jboss.as:jboss-as-host-controller:" + VersionLocator.getCurrentVersion(), null),
+        V7_1_2_FINAL("org.jboss.as:jboss-as-host-controller:7.1.2.Final", "7.1.2"),
+        V7_1_3_FINAL("org.jboss.as:jboss-as-host-controller:7.1.3.Final", "7.1.2");
 
         String mavenGav;
         String testControllerVersion;
+
         private TestControllerVersion(String mavenGav, String testControllerVersion) {
             this.mavenGav = mavenGav;
             this.testControllerVersion = testControllerVersion;
@@ -66,6 +87,26 @@ public interface LegacyKernelServicesInitializer {
 
         String getTestControllerVersion() {
             return testControllerVersion;
+        }
+
+    }
+
+    static final class VersionLocator {
+        private static String VERSION;
+
+        static {
+            try {
+                Properties props = new Properties();
+                props.load(LegacyKernelServicesInitializer.class.getResourceAsStream("version.properties"));
+                VERSION = props.getProperty("as.version");
+            } catch (Exception e) {
+                VERSION = "7.2.0.Final";
+                e.printStackTrace();
+            }
+        }
+
+        static String getCurrentVersion() {
+            return VERSION;
         }
     }
 }
