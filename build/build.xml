@@ -337,11 +337,13 @@
           ~ Product configuration modules.
           -->
 
-        <module-def name="org.jboss.as.console" slot="eap">
+        <module-def name="org.jboss.as.console">
             <maven-resource-with-classifier group="org.jboss.as" artifact="jboss-as-console" classifier="resources"/>
         </module-def>
 
-        <module-def name="org.jboss.as.domain-http-error-context" slot="eap"/>
+        <module-def name="org.jboss.as.domain-http-error-context">
+            <maven-resource group="org.jboss.as" artifact="jboss-as-domain-http-error-context"/>
+        </module-def>
 
         <module-def name="org.jboss.as.product" slot="eap"/>
 
