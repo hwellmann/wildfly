@@ -49,7 +49,7 @@ public class BasicJarTestCase extends BasicFlatTestCase {
 
 
 	static class ModuleAcDeploymentTestCaseSetup extends
-			ModuleDeploymentTestCaseSetup {
+			AbstractModuleDeploymentTestCaseSetup {
 		@Override
 		public void doSetup(ManagementClient managementClient) throws Exception {
 
@@ -58,5 +58,10 @@ public class BasicJarTestCase extends BasicFlatTestCase {
 			setConfiguration("basic.xml");
 
 		}
+
+        @Override
+        protected String getSlot() {
+            return BasicJarTestCase.class.getSimpleName().toLowerCase();
+        }
 	}
 }

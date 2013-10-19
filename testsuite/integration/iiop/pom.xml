@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.jboss.as</groupId>
         <artifactId>jboss-as-ts-integ</artifactId>
-        <version>7.2.0.Final-redhat-8</version>
+        <version>7.2.1.Final-redhat</version>
     </parent>
 
     <!-- ********************************************************************************** -->
@@ -15,7 +15,7 @@
     <!-- ********************************************************************************** -->
     <groupId>org.jboss.as</groupId>
     <artifactId>jboss-as-ts-integ-iiop</artifactId>
-    <version>7.2.0.Final-redhat-8</version>
+    <version>7.2.1.Final-redhat</version>
 
     <name>JBoss Application Server Test Suite: Integration - IIOP</name>
 
@@ -91,7 +91,7 @@
                                     </includes>
 
                                     <!-- Parameters to test cases. -->
-                                    <systemPropertyVariables>
+                                    <systemPropertyVariables combine.children="append">
                                         <arquillian.launch>iiop</arquillian.launch>
                                         <jboss.server.config.file.name>standalone-full.xml</jboss.server.config.file.name>
                                     </systemPropertyVariables>

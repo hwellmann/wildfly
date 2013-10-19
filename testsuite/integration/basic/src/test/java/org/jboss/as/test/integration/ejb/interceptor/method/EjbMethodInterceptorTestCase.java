@@ -26,6 +26,7 @@ import javax.naming.NamingException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit.InSequence;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -52,6 +53,8 @@ public class EjbMethodInterceptorTestCase {
         final InitialContext ctx = new InitialContext();
         final ClassifiedBean bean = (ClassifiedBean) ctx.lookup("java:module/" + ClassifiedBean.class.getSimpleName());
 
+        TopSecretInterceptor.called = false;
+        SecretInterceptor.called = false;
         final String secret = bean.secretMethod();
         Assert.assertEquals("Secret", secret);
         Assert.assertTrue(SecretInterceptor.called);

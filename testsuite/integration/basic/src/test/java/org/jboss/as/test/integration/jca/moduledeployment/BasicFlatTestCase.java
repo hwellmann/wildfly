@@ -61,7 +61,7 @@ public class BasicFlatTestCase extends AbstractModuleDeploymentTestCase {
 	private final String cf = "java:/testMeRA";
 
 	static class ModuleAcDeploymentTestCaseSetup extends
-			ModuleDeploymentTestCaseSetup {
+			AbstractModuleDeploymentTestCaseSetup {
 
 		@Override
 		public void doSetup(ManagementClient managementClient) throws Exception {
@@ -71,7 +71,12 @@ public class BasicFlatTestCase extends AbstractModuleDeploymentTestCase {
 			setConfiguration("basic.xml");
 
 		}
-	}
+
+        @Override
+        protected String getSlot() {
+            return BasicFlatTestCase.class.getSimpleName().toLowerCase();
+        }
+    }
 
 	/**
 	 * Define the deployment
@@ -79,8 +84,8 @@ public class BasicFlatTestCase extends AbstractModuleDeploymentTestCase {
 	 * @return The deployment archive
 	 */
 	@Deployment
-	public static JavaArchive createDeployment() throws Exception {
-		return createDeployment(BasicFlatTestCase.class);
+	public static JavaArchive getDeployment() throws Exception {
+		return createDeployment();
 	}
 
 	@Resource(mappedName = cf)

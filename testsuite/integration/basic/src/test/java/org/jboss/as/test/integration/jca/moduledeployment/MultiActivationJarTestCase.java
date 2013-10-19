@@ -49,7 +49,7 @@ public class MultiActivationJarTestCase extends MultiActivationFlatTestCase {
 
 
 	static class ModuleAcDeploymentTestCaseSetup extends
-			ModuleDeploymentTestCaseSetup {
+			AbstractModuleDeploymentTestCaseSetup {
 		@Override
 		public void doSetup(ManagementClient managementClient) throws Exception {
 
@@ -58,5 +58,10 @@ public class MultiActivationJarTestCase extends MultiActivationFlatTestCase {
 			setConfiguration("double.xml");
 
 		}
+
+        @Override
+        protected String getSlot() {
+            return MultiActivationJarTestCase.class.getSimpleName().toLowerCase();
+        }
 	}
 }

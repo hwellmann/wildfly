@@ -4,7 +4,7 @@
   Set these VM properties in your IDE debugger 
 
   -Djava.util.logging.manager=org.jboss.logmanager.LogManager
-  -Djboss.home=${workspace_loc:jboss-as-build}/target/jboss-as-7.2.0.Final-redhat-8 
+  -Djboss.home=${workspace_loc:jboss-as-build}/target/jboss-as-7.2.1.Final-redhat 
   -DallowConnectingToRunningServer=true
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.jboss.as</groupId>
         <artifactId>jboss-as-ts-integ</artifactId>
-        <version>7.2.0.Final-redhat-8</version>
+        <version>7.2.1.Final-redhat</version>
     </parent>
 
     <!-- ********************************************************************************** -->
@@ -104,7 +104,7 @@
                                     <excludes>
                                         <exclude>**/embedded/osgi/**/*TestCase.java</exclude>
                                     </excludes>
-                                    <systemPropertyVariables>
+                                    <systemPropertyVariables combine.children="append">
                                         <arquillian.launch>osgi</arquillian.launch>
                                         <jboss.server.config.file.name>standalone.xml</jboss.server.config.file.name>
                                     </systemPropertyVariables>
@@ -120,7 +120,7 @@
                                     </includes>
                                     <!-- Fork every test because it will launch a separate AS instance -->
                                     <forkMode>always</forkMode>
-                                    <systemPropertyVariables>
+                                    <systemPropertyVariables combine.children="append">
                                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                         <jboss.home>${basedir}/target/jbossas</jboss.home>
                                         <module.path>${jboss.home}/modules</module.path>

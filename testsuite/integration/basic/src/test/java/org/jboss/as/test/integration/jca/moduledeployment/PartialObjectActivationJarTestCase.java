@@ -49,7 +49,7 @@ public class PartialObjectActivationJarTestCase extends PartialObjectActivationF
 
 
 	static class ModuleAcDeploymentTestCaseSetup extends
-			ModuleDeploymentTestCaseSetup {
+			AbstractModuleDeploymentTestCaseSetup {
 		@Override
 		public void doSetup(ManagementClient managementClient) throws Exception {
 
@@ -58,5 +58,10 @@ public class PartialObjectActivationJarTestCase extends PartialObjectActivationF
 			setConfiguration("basic.xml");
 
 		}
+
+        @Override
+        protected String getSlot() {
+            return PartialObjectActivationJarTestCase.class.getSimpleName().toLowerCase();
+        }
 	}
 }

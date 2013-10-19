@@ -60,7 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -151,19 +151,9 @@ public class ExpressionSupportSmokeTestCase extends BuildConfigurationTestBase {
         validateExpectedValues(PathAddress.EMPTY_ADDRESS, expectedValues, "master");
     }
 
-    @Override
-    protected String getDomainConfigFile() {
-        return "domain.xml";
-    }
-
-    @Override
-    protected String getHostConfigFile() {
-        return "host.xml";
-    }
-
     @Before
     public void setUp() throws IOException {
-        final JBossAsManagedConfiguration config = createConfiguration(getDomainConfigFile(), getHostConfigFile(), getClass().getSimpleName());
+        final JBossAsManagedConfiguration config = createConfiguration("domain.xml", "host.xml", getClass().getSimpleName());
         config.setAdminOnly(true);
 
         // Trigger the servers to fail on boot if there are runtime errors
