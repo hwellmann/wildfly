@@ -66,7 +66,7 @@ public class MultiActivationFlatTestCase extends
 	private final String cf1 = "java:/testMeRA1";
 
 	static class ModuleAcDeploymentTestCaseSetup extends
-			ModuleDeploymentTestCaseSetup {
+			AbstractModuleDeploymentTestCaseSetup {
 
 		@Override
 		public void doSetup(ManagementClient managementClient) throws Exception {
@@ -77,16 +77,20 @@ public class MultiActivationFlatTestCase extends
 
         }
 
+        @Override
+        protected String getSlot() {
+            return MultiActivationFlatTestCase.class.getSimpleName().toLowerCase();
+        }
 	}
 
 	/**
 	 * Define the deployment
-	 *
+	 * 
 	 * @return The deployment archive
 	 */
 	@Deployment
-	public static JavaArchive createDeployment() throws Exception {
-		return createDeployment(MultiActivationFlatTestCase.class);
+	public static JavaArchive getDeployment() throws Exception {
+		return createDeployment();
 	}
 
 	@Resource(mappedName = cf)

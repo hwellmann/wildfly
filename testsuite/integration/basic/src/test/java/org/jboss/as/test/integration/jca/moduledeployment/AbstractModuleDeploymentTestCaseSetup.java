@@ -24,10 +24,11 @@ package org.jboss.as.test.integration.jca.moduledeployment;
 import org.jboss.as.arquillian.container.ManagementClient;
 import org.jboss.as.connector.subsystems.resourceadapters.Namespace;
 import org.jboss.as.connector.subsystems.resourceadapters.ResourceAdapterSubsystemParser;
-import org.jboss.as.test.integration.jca.JcaMgmtServerSetupTask;
 import org.jboss.as.test.integration.jca.rar.MultipleConnectionFactory1;
+import org.jboss.as.test.integration.management.base.AbstractMgmtServerSetupTask;
 import org.jboss.as.test.shared.FileUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ExplodedExporter;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -37,12 +38,16 @@ import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
 import org.xnio.IoUtils;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -53,8 +58,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
  * AS7-5768 -Support for RA module deployment
  *
  * @author <a href="vrastsel@redhat.com">Vladimir Rastseluev</a>
+ * @author <a href="istudens@redhat.com">Ivo Studensky</a>
  */
-public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
+public abstract class AbstractModuleDeploymentTestCaseSetup extends AbstractMgmtServerSetupTask {
+    private static final Logger log = Logger.getLogger(AbstractModuleDeploymentTestCaseSetup.class);
+
+    private static final Pattern MODULE_SLOT_PATTERN = Pattern.compile("slot=\"main\"");
 
 	protected File testModuleRoot;
 	protected File slot;
@@ -72,7 +81,16 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 	}
 
 	public void removeModule(final String moduleName) throws Exception {
+        removeModule(moduleName, false);
+    }
+
+    public void removeModule(final String moduleName, boolean deleteParent) throws Exception {
 		testModuleRoot = new File(getModulePath(), moduleName);
+        File file = testModuleRoot;
+        if (deleteParent) {
+            while (!getModulePath().equals(file.getParentFile()))
+                file = file.getParentFile();
+        }
 		deleteRecursively(testModuleRoot);
 	}
 
@@ -83,26 +101,25 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 					deleteRecursively(new File(file, name));
 				}
 			}
-			file.delete();
+            if (!file.delete()) {
+                log.warn("Could not delete " + file);
+            }
 		}
 	}
 
 	private void createTestModule(String moduleXml) throws IOException {
-		if (testModuleRoot.exists()) {
-			throw new IllegalArgumentException(testModuleRoot
-					+ " already exists");
+        slot = new File(testModuleRoot, getSlot());
+        if (slot.exists()) {
+            throw new IllegalArgumentException(slot + " already exists");
 		}
-		File file = new File(testModuleRoot, "main");
-		if (!file.mkdirs()) {
-			throw new IllegalArgumentException("Could not create " + file);
+        if (!slot.mkdirs()) {
+            throw new IllegalArgumentException("Could not create " + slot);
 		}
-		slot = file;
 		URL url = this.getClass().getResource(moduleXml);
 		if (url == null) {
-			throw new IllegalStateException("Could not find module.xml");
+            throw new IllegalStateException("Could not find " + moduleXml);
 		}
-		copyFile(new File(file, "module.xml"), url.openStream());
-
+        copyModuleXml(slot, url.openStream());
 	}
 
 	protected void copyFile(File target, InputStream src) throws IOException {
@@ -118,6 +135,24 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 			IoUtils.safeClose(out);
 		}
 	}
+
+    protected void copyModuleXml(File slot, InputStream src) throws IOException {
+        BufferedReader in = null;
+        PrintWriter out = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(src));
+            out = new PrintWriter(new File(slot, "module.xml"));
+            String line;
+            while ((line = in.readLine()) != null) {
+                // replace slot name in the module xml file
+                line = MODULE_SLOT_PATTERN.matcher(line).replaceAll("slot=\"" + getSlot() + "\"");
+                out.println(line);
+            }
+        } finally {
+            IoUtils.safeClose(in);
+            IoUtils.safeClose(out);
+        }
+    }
 
 	private File getModulePath() {
 		String modulePath = System.getProperty("module.path", null);
@@ -148,18 +183,18 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 			throws Exception {
 		takeSnapShot();
 		remove(address);
-		removeModule(defaultPath);
+        removeModule(defaultPath, true);
 	}
 
 	@Override
 	protected void doSetup(ManagementClient managementClient) throws Exception {
-
 		addModule(defaultPath);
-
 	}
 
 	protected void setConfiguration(String fileName) throws Exception {
 		String xml = FileUtils.readFile(this.getClass(), fileName);
+        // replace slot name in the configuration
+        xml = MODULE_SLOT_PATTERN.matcher(xml).replaceAll("slot=\"" + getSlot() + "\"");
 		List<ModelNode> operations = xmlToModelOperations(xml,
 				Namespace.CURRENT.getUriString(),
 				new ResourceAdapterSubsystemParser());
@@ -169,7 +204,6 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
             executeOperation(op);
         }
 		//executeOperation(operationListToCompositeOperation(operations));
-
     }
 
 	/**
@@ -179,7 +213,6 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 	 * @throws Exception
 	 */
 	protected void fillModuleWithFlatClasses(String raFile) throws Exception {
-
 		ResourceAdapterArchive rar = ShrinkWrap
 				.create(ResourceAdapterArchive.class);
 		JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "ra16out.jar");
@@ -187,8 +220,8 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 				javax.jms.MessageListener.class);
 		rar.addAsManifestResource(this.getClass().getPackage(), raFile,
 				"ra.xml");
-		rar.as(ExplodedExporter.class).exportExploded(testModuleRoot, "main");
-		jar.as(ExplodedExporter.class).exportExploded(testModuleRoot, "main");
+        rar.as(ExplodedExporter.class).exportExploded(testModuleRoot, getSlot());
+        jar.as(ExplodedExporter.class).exportExploded(testModuleRoot, getSlot());
 	}
 
 	/**
@@ -203,7 +236,7 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 		jar.addPackage(MultipleConnectionFactory1.class.getPackage());
 		rar.addAsManifestResource(
 				PureJarTestCase.class.getPackage(), raFile, "ra.xml");
-		rar.as(ExplodedExporter.class).exportExploded(testModuleRoot, "main");
+        rar.as(ExplodedExporter.class).exportExploded(testModuleRoot, getSlot());
 
 		copyFile(new File(slot, "ra16out.jar"), jar.as(ZipExporter.class).exportAsInputStream());
 	}
@@ -215,5 +248,12 @@ public class ModuleDeploymentTestCaseSetup extends JcaMgmtServerSetupTask {
 	public static ModelNode getAddress() {
 		return address;
 	}
+
+    /**
+     * This should be overridden to return a unique slot name for each test-case class / module.
+     * We need this since custom modules are not supported to be removing at runtime, see WFLY-1560.
+     * @return a name of the slot of the test module
+     */
+    protected abstract String getSlot();
 
 }

@@ -47,8 +47,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(Arquillian.class)
 @RunAsClient
@@ -90,8 +89,8 @@ public class ClusteredSingleSignOnTestCase {
             @ArquillianResource @OperateOnDeployment(DEPLOYMENT_2) ManagementClient client2) throws Exception {
 
         // add sso valves
-        SSOTestBase.addClusteredSso(client1.getControllerClient());
-        SSOTestBase.addClusteredSso(client2.getControllerClient());
+        SSOTestBase.addClusteredSso(client1.getControllerClient(), "standalone");
+        SSOTestBase.addClusteredSso(client2.getControllerClient(), "standalone");
 
         controller.stop(CONTAINER_1);
         controller.stop(CONTAINER_2);
@@ -110,8 +109,8 @@ public class ClusteredSingleSignOnTestCase {
             @ArquillianResource @OperateOnDeployment(DEPLOYMENT_1) ManagementClient client1,
             @ArquillianResource @OperateOnDeployment(DEPLOYMENT_2) ManagementClient client2) throws Exception {
 
-        SSOTestBase.removeSso(client1.getControllerClient());
-        SSOTestBase.removeSso(client2.getControllerClient());
+        SSOTestBase.removeSso(client1.getControllerClient(), "standalone");
+        SSOTestBase.removeSso(client2.getControllerClient(), "standalone");
 
         deployer.undeploy(DEPLOYMENT_1);
         controller.stop(CONTAINER_1);
@@ -128,7 +127,7 @@ public class ClusteredSingleSignOnTestCase {
             @ArquillianResource(LogoutServlet.class) @OperateOnDeployment(DEPLOYMENT_1) URL baseURL1,
             @ArquillianResource(LogoutServlet.class) @OperateOnDeployment(DEPLOYMENT_2) URL baseURL2) throws Exception {
         log.info("+++ testFormAuthSingleSignOn");
-        SSOTestBase.executeFormAuthSingleSignOnTest(new URL(baseURL1, "/"), new URL(baseURL2, "/"),  log);
+        SSOTestBase.executeFormAuthSingleSignOnTest(new URL(baseURL1, "/"), new URL(baseURL2, "/"), log);
     }
 
     /**

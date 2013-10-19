@@ -29,7 +29,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>10-redhat-2</version>
+      <version>10</version>
       <relativePath></relativePath>
     </parent>
 
@@ -40,6 +40,7 @@
 
     <properties>
         <property.old.as.version>7.1.2.Final</property.old.as.version>
+        <version.org.zanata.plugin>1.5.0</version.org.zanata.plugin>
     </properties>
 
     <dependencies>
@@ -72,6 +73,7 @@
             <plugin>
                 <groupId>org.zanata</groupId>
                 <artifactId>zanata-maven-plugin</artifactId>
+                <version>${version.org.zanata.plugin}</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

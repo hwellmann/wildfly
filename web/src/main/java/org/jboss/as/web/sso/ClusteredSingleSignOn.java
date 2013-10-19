@@ -18,8 +18,11 @@ package org.jboss.as.web.sso;
 import static org.jboss.as.web.WebMessages.MESSAGES;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -83,11 +86,17 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
     /** Currently started Managers that have associated as session with an SSO */
     private Set<Manager> activeManagers = new CopyOnWriteArraySet<Manager>();
 
-    /** Max number of ms an SSO with no active sessions will be usable by a request */
+    /**
+     *   Max number of ms an SSO with no active sessions will be usable by a request
+     *
+     *   This can be set using the system property: "org.jboss.as.web.sso.ClusteredSingleSignOn.maxEmptyLife"
+     */
     private volatile int maxEmptyLife = DEFAULT_MAX_EMPTY_LIFE * 1000;
 
     /**
      * Minimum number of ms since the last processExpires() run before a new run is allowed.
+     *
+     * This can be set using the system property: "org.jboss.as.web.sso.ClusteredSingleSignOn.processExpiresInterval"
      */
     private volatile int processExpiresInterval = DEFAULT_PROCESS_EXPIRES_INTERVAL * 1000;
 
@@ -113,7 +122,7 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
      * @return a non-negative number
      *
      * @see #DEFAULT_MAX_EMPTY_LIFE *
-     * @see #setMaxEmptyLife()
+     * @see #setMaxEmptyLife(int)
      */
     public int getMaxEmptyLife() {
         return (maxEmptyLife / 1000);
@@ -147,7 +156,7 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
      * @return a positive number
      *
      * @see #DEFAULT_PROCESS_EXPIRES_INTERVAL
-     * @see #setMaxEmptyLife()
+     * @see #setMaxEmptyLife(int)
      * @see #setProcessExpiresInterval(int)
      */
     public int getProcessExpiresInterval() {
@@ -196,7 +205,8 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
         if (started) {
             throw new LifecycleException(MESSAGES.valveAlreadyStarted());
         }
-
+        // Check the maxEmptyLife and processExpiresInterval values from system properties.
+        checkSystemProperties();
         lifecycle.fireLifecycleEvent(START_EVENT, null);
         started = true;
     }
@@ -557,6 +567,33 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
     }
 
     /**
+     * Logout the specified single sign on identifier from all sessions.
+     *
+     * @param ssoId Single sign on identifier to logout
+     */
+    public void removeLogin(String ssoId) {
+        // Look up and remove the corresponding SingleSignOnEntry
+        SingleSignOnEntry sso = getSingleSignOnEntry(ssoId);
+
+        if (sso == null)
+            return;
+
+        // Remove all authentication information from all associated sessions
+        for (Session session : sso.findSessions()) {
+            session.setAuthType(null);
+            session.setPrincipal(null);
+            session.removeNote(Constants.SESS_USERNAME_NOTE);
+            session.removeNote(Constants.SESS_PASSWORD_NOTE);
+        }
+        // Reset SSO authentication
+        synchronized (sso) {
+            if (sso.updateCredentials2(null, null, null, null)) {
+                ssoClusterManager.updateCredentials(ssoId, null, null, null);
+            }
+        }
+    }
+
+    /**
      * Look up and return the cached SingleSignOn entry associated with this sso id value, if there is one; otherwise return
      * <code>null</code>.
      *
@@ -772,13 +809,29 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
     public void remoteUpdate(String ssoId, SSOCredentials credentials) {
         SingleSignOnEntry sso = localLookup(ssoId);
         // Only update if the entry is missing information
-        if (sso != null && sso.getCanReauthenticate() == false) {
-            WebLogger.WEB_SSO_LOGGER.tracef("Update sso id %s to auth type %s", ssoId, credentials.getAuthType());
+        if (sso != null) {
+            if (credentials.getAuthType() == null && credentials.getUsername() == null && credentials.getPassword() == null) {
+                WebLogger.WEB_SSO_LOGGER.tracef("Uppdating local SSO cache and associated sessions after SSO id %s was logged out on other cluster member", ssoId);
 
-            synchronized (sso) {
-                // Use the existing principal
-                Principal p = sso.getPrincipal();
-                sso.updateCredentials(p, credentials.getAuthType(), credentials.getUsername(), credentials.getPassword());
+                // Remove all authentication information from all associated sessions
+                for (Session session : sso.findSessions()) {
+                    session.setAuthType(null);
+                    session.setPrincipal(null);
+                    session.removeNote(Constants.SESS_USERNAME_NOTE);
+                    session.removeNote(Constants.SESS_PASSWORD_NOTE);
+                }
+
+                synchronized (sso) {
+                    sso.updateCredentials(null, credentials.getAuthType(), credentials.getUsername(), credentials.getPassword());
+                }
+            } else if (sso.getCanReauthenticate() == false) {
+                WebLogger.WEB_SSO_LOGGER.tracef("Update sso id %s to auth type %s", ssoId, credentials.getAuthType());
+
+                synchronized (sso) {
+                    // Use the existing principal
+                    Principal p = sso.getPrincipal();
+                    sso.updateCredentials(p, credentials.getAuthType(), credentials.getUsername(), credentials.getPassword());
+                }
             }
         }
 
@@ -858,5 +911,46 @@ public class ClusteredSingleSignOn extends org.apache.catalina.authenticator.Sin
         String hostName = host.getName();
 
         return new FullyQualifiedSessionId(id, contextName, hostName);
+    }
+
+    /**
+     * Method as part of one off fix related to BZ:958572.
+     *
+     * A user would set the maxEmptyLife and the processExpiresInterval values through System properties. In this
+     * check we will look for these properties and verify if they have been pre-set or not.
+     */
+    private void checkSystemProperties() {
+        final WebLogger logger = WebLogger.WEB_SSO_LOGGER;
+
+        Properties properties = System.getProperties();
+        final String maxEmptyLifeProperty = properties.getProperty("org.jboss.as.web.sso.ClusteredSingleSignOn" +
+             ".maxEmptyLife");
+        final String processExpiredIntervalProperty = properties.getProperty("org.jboss.as.web.sso" +
+              ".ClusteredSingleSignOn.processExpiresInterval");
+
+        // We will only execute the privileged action if the property has been set.
+        if (maxEmptyLifeProperty != null || processExpiredIntervalProperty != null) {
+           AccessController.doPrivileged(new PrivilegedAction<Object>() {
+              @Override
+              public Object run() {
+                 if (logger.isInfoEnabled()) logger.infof("Checking system properties for maxEmptyLife and " +
+                       "processExpiresInterval override values. This is a one-off fix for Red Hat bug BZ-958572");
+
+                 if (maxEmptyLifeProperty != null) {
+                    setMaxEmptyLife(Integer.parseInt(maxEmptyLifeProperty));
+                    if (logger.isDebugEnabled()) logger.debugf("maxEmptyLife preset as a System property. Changed value " +
+                          "to %s", maxEmptyLife);
+                 }
+                 if (processExpiredIntervalProperty != null){
+                    setProcessExpiresInterval(Integer.parseInt(processExpiredIntervalProperty));
+                    if (logger.isDebugEnabled()) logger.debugf("processExpiredInterval preset as a System property. " +
+                          "Changed value to %s", processExpiresInterval);
+                 }
+                 // We don't really have to return anything.
+                 return null;
+              }
+           });
+        }
+        if (logger.isTraceEnabled()) logger.tracef("Cleared adding the System properties within a privileged action.");
     }
 }

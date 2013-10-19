@@ -1206,7 +1206,16 @@ public class DistributableSessionManager<O extends OutgoingDistributableSessionD
                                     // JBAS-2792 don't assign the result of loadSession to session
                                     // just update the object from the cache or fall through if
                                     // the session has been removed from the cache
-                                    loadSession(session.getRealId());
+                                    try {
+                                        loadSession(session.getRealId());
+                                    } finally {
+                                        // BZ 990092 loadSession(...) will have started a batch - so we need to end it here
+                                        BatchingManager bm = this.distributedCacheManager.getBatchingManager();
+                                        if (bm.isBatchInProgress()) {
+                                            bm.setBatchRollbackOnly();
+                                            bm.endBatch();
+                                        }
+                                    }
                                 }
 
                                 // Do a normal invalidation check that will expire the
@@ -1262,7 +1271,17 @@ public class DistributableSessionManager<O extends OutgoingDistributableSessionD
                                 if (osu.isPassivated()) {
                                     // Passivated session needs to be expired. A call to
                                     // findSession will bring it out of passivation
-                                    Session session = findSession(realId);
+                                    Session session = null;
+                                    try {
+                                        session = findSession(realId);
+                                    } finally {
+                                        // BZ 993559 loadSession(...) will have started a batch to bring the session out of passivation - so we need to end it here
+                                        BatchingManager bm = this.distributedCacheManager.getBatchingManager();
+                                        if (bm.isBatchInProgress()) {
+                                            bm.setBatchRollbackOnly();
+                                            bm.endBatch();
+                                        }
+                                    }
                                     if (session != null) {
                                         session.isValid(); // will expire
                                         continue;
@@ -1392,13 +1411,23 @@ public class DistributableSessionManager<O extends OutgoingDistributableSessionD
                             return session;
                         }
 
-                        IncomingDistributableSessionData data = this.distributedCacheManager.getSessionData(realId, initialLoad);
-                        if (data != null) {
-                            session.update(data);
-                        } else {
-                            // Clunky; we set the session variable to null to indicate
-                            // no data so move on
-                            session = null;
+                        BatchingManager bm = this.distributedCacheManager.getBatchingManager();
+                        try {
+                            if (!bm.isBatchInProgress()) {
+                                bm.startBatch();
+                            }
+                            IncomingDistributableSessionData data = this.distributedCacheManager.getSessionData(realId, initialLoad);
+                            if (data != null) {
+                                session.update(data);
+                            } else {
+                                // Clunky; we set the session variable to null to indicate
+                                // no data so move on
+                                session = null;
+                                bm.setBatchRollbackOnly();
+                                bm.endBatch();
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
 
                         if (session != null) {

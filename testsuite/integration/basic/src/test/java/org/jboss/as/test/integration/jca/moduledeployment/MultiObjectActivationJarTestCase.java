@@ -49,7 +49,7 @@ public class MultiObjectActivationJarTestCase extends MultiObjectActivationFlatT
 
 
 	static class ModuleAcDeploymentTestCaseSetup extends
-			ModuleDeploymentTestCaseSetup {
+			AbstractModuleDeploymentTestCaseSetup {
 		@Override
 		public void doSetup(ManagementClient managementClient) throws Exception {
 
@@ -58,5 +58,10 @@ public class MultiObjectActivationJarTestCase extends MultiObjectActivationFlatT
 			setConfiguration("multi.xml");
 
 		}
+
+        @Override
+        protected String getSlot() {
+            return MultiObjectActivationJarTestCase.class.getSimpleName().toLowerCase();
+        }
 	}
 }

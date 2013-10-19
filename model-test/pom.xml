@@ -135,7 +135,6 @@
         <dependency>
             <groupId>org.sonatype.sisu</groupId>
             <artifactId>sisu-guice</artifactId>
-            <version>${version.org.sonatype.sisu}</version>
         </dependency>
 
     </dependencies>

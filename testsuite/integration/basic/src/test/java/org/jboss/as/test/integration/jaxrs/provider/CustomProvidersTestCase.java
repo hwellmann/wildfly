@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
+import java.util.Currency;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
@@ -89,7 +90,6 @@ public class CustomProvidersTestCase {
      * @throws Exception
      */
     @Test
-    @Ignore("JBPAPP-9963")
     @OperateOnDeployment(WEBAPP_TEST_EXCEPTION_MAPPER)
     public void testProvidersInTwoWars(@ArquillianResource URL webAppURL) throws Exception {
         final String path = webAppURL.toExternalForm() + ExceptionMapperProvider.PATH_EXCEPTION.substring(1);
@@ -100,7 +100,7 @@ public class CustomProvidersTestCase {
                 + CurrencyConverterProvider.PATH_CONVERTER.substring(1).replace(
                         "{" + CurrencyConverterProvider.PARAM_CURRENCY + "}", "USD");
         LOGGER.info("Requested path: " + converterPath);
-        assertEquals("$", HttpRequest.get(converterPath, 10, TimeUnit.SECONDS));
+        assertEquals(Currency.getInstance("USD").getSymbol(), HttpRequest.get(converterPath, 10, TimeUnit.SECONDS));
     }
 
 }
