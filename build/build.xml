@@ -345,8 +345,6 @@
             <maven-resource group="org.jboss.as" artifact="jboss-as-domain-http-error-context"/>
         </module-def>
 
-        <module-def name="org.jboss.as.product" slot="eap"/>
-
     </target>
 
     <target name="modules" depends="modules-minimalistic, modules-product">

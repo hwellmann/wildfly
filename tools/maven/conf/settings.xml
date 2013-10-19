@@ -85,11 +85,10 @@ under the License.
     <mirror>
       <id>eap6-mirror-setting</id>
       <mirrorOf>
-         *,!central-eap6,!central-eap6-plugins,!jboss-public-eap6,!jboss-public-eap6-plugins
+        mead-eap6,mead-eap6-plugins,central-eap6-plugins,central-eap6
       </mirrorOf>
       <name>Mirror Settings for EAP 6 build</name>
-      <!-- Note: for rebuilds, this URL needs to be changed to the correct EAP 6 build Maven repo -->
-      <url>http://download.lab.bos.redhat.com/brewroot/repos/jb-eap-6-rhel-6-build/latest/maven/</url>
+      <url>http://maven.repository.redhat.com/techpreview/all/</url>
     </mirror>
   </mirrors>
   
@@ -126,6 +125,18 @@ under the License.
       </activation>
       <repositories>
         <repository>
+	  <id>others</id>
+	  <name>Redhat JBOSS Enterprise repo</name>
+	  <url>http://maven.repository.redhat.com/techpreview/all/</url>
+	  <releases>
+	    <enabled>true</enabled>
+	    <updatePolicy>never</updatePolicy>
+	  </releases>
+	  <snapshots>
+	    <enabled>false</enabled>
+	  </snapshots>
+	</repository>
+	<repository>
           <id>central-eap6</id>
           <name>Use unique IDs for downloading artifacts vs. plugins from central</name>
           <url>http://repo1.maven.org/maven2</url>
