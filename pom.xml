@@ -4882,9 +4882,9 @@
             </dependency>
 
             <dependency>
-                <groupId>org.jboss.as</groupId>
-                <artifactId>jboss-as-console</artifactId>
-                <version>${version.org.jboss.as.console}</version>
+                <groupId>org.jboss.hal</groupId>
+                <artifactId>release-stream</artifactId>
+                <version>${version.org.jboss.hal.release-stream}</version>
                 <classifier>resources</classifier>
                 <exclusions>
                     <exclusion>
